@@ -46,3 +46,56 @@ export const compareMasterPassword = async (hashedPw, textPw) => {
 /**
  * User stored passwords handling functions
  */
+
+/**
+ * This function is used to extract a key and iv derived from the user's master password
+ * @param {Sting} masterPassword
+ * @return {Object}
+ */
+function deriveKeyAndIV(masterPassword) {
+  const key = crypto
+    .createHash("sha256")
+    .update(masterPassword, "utf-8")
+    .digest();
+  const iv = crypto.randomBytes(32);
+  return { key, iv };
+}
+
+export function encryptPw(txtPw, masterPassword) {
+  try {
+    const algorithm = process.env.CRYPT_ALGO;
+    const { key, iv } = deriveKeyAndIV(masterPassword);
+
+    // Encryption
+    const cipher = crypto.createCipheriv(algorithm, Buffer.from(key), iv);
+
+    let encrypted = cipher.update(txtPw, "utf8", "hex");
+
+    encrypted += cipher.final("hex");
+
+    const authTag = cipher.getAuthTag();
+
+    return { encryptedPw: encrypted, authTag, iv };
+  } catch (err) {
+    throw new Error(err);
+  }
+}
+
+export function decryptPw(encryptedPw, masterPassword, authTag) {
+  try {
+    const algorithm = process.env.CRYPT_ALGO;
+    const { key, iv } = deriveKeyAndIV(masterPassword);
+
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+
+    decipher.setAuthTag(Buffer.from(authTag, "hex"));
+
+    let decrypted = decipher.update(encryptedPw, "hex", "utf8");
+
+    decrypted += decipher.final("utf8");
+
+    return decrypted;
+  } catch (err) {
+    throw new Error(err);
+  }
+}
