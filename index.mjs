@@ -1,6 +1,10 @@
 import { getDirName } from "./helperFunctions.mjs";
 import { connectToDatabase } from "./utils/database.utils.mjs";
-import { showMainMenu, accountCreation } from "./utils/handlers.utils.mjs";
+import {
+  showMainMenu,
+  accountCreation,
+  userLogin,
+} from "./utils/handlers.utils.mjs";
 import "dotenv/config";
 
 /**
@@ -29,11 +33,13 @@ console.log("%c/********************************/", "color: #3498db;");
         CurrentUser = await accountCreation(DB_CON);
         break;
       case 2:
-        return;
+        CurrentUser = await userLogin(DB_CON);
+        break;
     }
 
     if (CurrentUser) {
       //showLoggedInOptions
+      console.log(`Welcome ` + CurrentUser);
     }
   } catch (e) {
     throw new Error(e);

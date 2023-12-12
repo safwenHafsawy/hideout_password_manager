@@ -42,52 +42,25 @@ export const insertNewUserData = async function (DB_CON, userDetails) {
   }
 };
 
-export const checkUserCred = async function (DB_CON, inquirer) {
-  let repetition = 0;
+export const checkUserCred = async function (DB_CON, providedUserDetails) {
+  const storedDetails = await queryDB(
+    DB_CON,
+    {
+      query: "SELECT username, masterPassword FROM userData WHERE username = ?",
+      params: [providedUserDetails.username],
+    },
+    "singleRow"
+  );
 
-  const validateCredentials = async () => {
-    const providedUserDetails = await inquirer.prompt([
-      {
-        type: "input",
-        name: "username",
-        message: "Please enter your username",
-      },
-      {
-        type: "password",
-        name: "password",
-        message: "please enter your master password",
-      },
-    ]);
-
-    const storedDetails = await queryDB(
-      DB_CON,
-      {
-        query:
-          "SELECT username, masterPassword FROM userData WHERE username = ?",
-        params: [providedUserDetails.username],
-      },
-      "singleRow"
-    );
-
-    if (
-      !storedDetails ||
-      !(await compareMasterPassword(
-        storedDetails.masterPassword,
-        providedUserDetails.password
-      ))
-    ) {
-      repetition += 1;
-      if (repetition < 3) {
-        console.log("Invalid credentials! Please try again ");
-        await validateCredentials();
-      } else {
-        console.log("Too many attempts to login. aborting now...");
-        process.exit(1);
-      }
-    } else {
-      return storedDetails.username;
-    }
-  };
-
-  return await validateCredentials();
+  if (
+    !storedDetails ||
+    !(await compareMasterPassword(
+      storedDetails.masterPassword,
+      providedUserDetails.password
+    ))
+  ) {
+    return false;
+  } else {
+    return storedDetails.username;
+  }
 };

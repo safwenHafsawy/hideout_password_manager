@@ -1,5 +1,5 @@
 import inquirer from "inquirer";
-import { insertNewUserData } from "./userData.utils.mjs";
+import { insertNewUserData, checkUserCred } from "./userData.utils.mjs";
 
 export const showMainMenu = async function () {
   const userResponse = await inquirer.prompt({
@@ -51,6 +51,33 @@ export const accountCreation = async function (DB_CON) {
     }
 
     return newUsername;
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+export const userLogin = async function (DB_CON) {
+  try {
+    const userCred = await inquirer.prompt([
+      {
+        type: "input",
+        name: "username",
+        message: "Please enter your username ",
+      },
+      {
+        type: "password",
+        name: "password",
+        message: "Please enter your master password",
+      },
+    ]);
+
+    const username = await checkUserCred(DB_CON, userCred);
+
+    if (!username) {
+      console.log("Invalid credentials ! Please try again");
+      userLogin(DB_CON);
+    }
+    return username;
   } catch (err) {
     throw new Error(err);
   }
