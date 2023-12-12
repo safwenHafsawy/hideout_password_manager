@@ -1,9 +1,10 @@
 import { getDirName } from "./helperFunctions.mjs";
 import { connectToDatabase } from "./utils/database.utils.mjs";
 import {
-  showMainMenu,
   accountCreation,
   userLogin,
+  showChoiceMenu,
+  addNewSafeBox,
 } from "./utils/handlers.utils.mjs";
 import "dotenv/config";
 
@@ -20,14 +21,23 @@ var CurrentUser;
  */
 console.clear();
 console.log("%c/********************************/", "color: #3498db;");
-console.log("%c/**** WELCOME TO PW MANAGER ****/", "color: #2ecc71;");
+console.log(`
+
+╦ ╦┌─┐┬  ┌─┐┌─┐┌┬┐┌─┐  ┌┬┐┌─┐  ╔═╗╦ ╦╔╦╗
+║║║├┤ │  │  │ ││││├┤    │ │ │  ╠═╝║║║║║║
+╚╩╝└─┘┴─┘└─┘└─┘┴ ┴└─┘   ┴ └─┘  ╩  ╚╩╝╩ ╩
+
+
+`);
 console.log("%c/********************************/", "color: #3498db;");
 
 // init function
 (async function () {
   try {
-    const firstChoice = await showMainMenu();
-    console.log(firstChoice.response);
+    const firstChoice = await showChoiceMenu("Hello Hello dear safe keeper!", [
+      { name: "Create new account ", value: 1 },
+      { name: "Login to existing account", value: 2 },
+    ]);
     switch (firstChoice.response) {
       case 1:
         CurrentUser = await accountCreation(DB_CON);
@@ -39,7 +49,24 @@ console.log("%c/********************************/", "color: #3498db;");
 
     if (CurrentUser) {
       //showLoggedInOptions
-      console.log(`Welcome ` + CurrentUser);
+      const choice = await showChoiceMenu(
+        `Welcome ${CurrentUser} ! How can PW manager help you today ? `,
+        [
+          { name: "Store new password", value: 1 },
+          { name: "Get password from DB", value: 2 },
+          { name: "Edit account", value: 3 },
+          { name: "Exit", value: 4 },
+        ]
+      );
+
+      switch (choice.response) {
+        case 1:
+          await addNewSafeBox(DB_CON, CurrentUser);
+          break;
+        case 4:
+          console.log("See you soon !");
+          process.exit(0);
+      }
     }
   } catch (e) {
     throw new Error(e);

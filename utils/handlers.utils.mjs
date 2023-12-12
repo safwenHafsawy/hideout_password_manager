@@ -1,15 +1,19 @@
 import inquirer from "inquirer";
-import { insertNewUserData, checkUserCred } from "./userData.utils.mjs";
+import crypto from "crypto";
+import {
+  insertNewUserData,
+  checkUserCred,
+  getUserMasterPW,
+} from "./userData.utils.mjs";
+import { encryptPw, decryptPw } from "./passwords.utils.mjs";
+import { executeDBManipulation } from "./database.utils.mjs";
 
-export const showMainMenu = async function () {
+export const showChoiceMenu = async function (message, choices) {
   const userResponse = await inquirer.prompt({
     type: "list",
     name: "response",
-    message: "How Can I help you Today",
-    choices: [
-      { name: "Create new account ", value: 1 },
-      { name: "Login to existing account", value: 2 },
-    ],
+    message,
+    choices,
   });
 
   return userResponse;
@@ -34,6 +38,7 @@ export const accountCreation = async function (DB_CON) {
         message:
           "Please enter your master password ! make sure you memoize it cause it unrecoverable",
         prefix: "!!",
+        mask: "*",
         validate(password) {
           const pwRegExp = new RegExp("([\\wê_$}{[\\]]){8,}", "g");
           if (!pwRegExp.test(password))
@@ -68,6 +73,7 @@ export const userLogin = async function (DB_CON) {
         type: "password",
         name: "password",
         message: "Please enter your master password",
+        mask: "*",
       },
     ]);
 
@@ -83,13 +89,45 @@ export const userLogin = async function (DB_CON) {
   }
 };
 
-export const firstQuestion = async function (inquirer) {
-  const answer = await inquirer.prompt({
-    type: "list",
-    name: "firstQuestion",
-    message: "How can PW manager help you today ? ",
-    choices: ["Store new password", "Get password for DB"],
-  });
+export const addNewSafeBox = async (DB_CON, CurrentUser) => {
+  try {
+    const safeBoxData = await inquirer.prompt([
+      {
+        type: "input",
+        name: "for",
+        message: "What account are storing your password for?",
+      },
+      {
+        type: "password",
+        name: "password",
+        message: "Enter the password you want to put in the safe box",
+        mask: "*",
+      },
+    ]);
 
-  return answer;
+    // get user master password (used for encrypting stored passwords)
+    const { masterPassword } = await getUserMasterPW(DB_CON, CurrentUser);
+    const { encryptedPw, authTag, iv } = encryptPw(
+      safeBoxData.password,
+      masterPassword
+    );
+
+    const queryParams = {
+      id: crypto.randomUUID(),
+      platform: safeBoxData.for,
+      encryptedPw,
+      authTag,
+      iv,
+      CurrentUser,
+    };
+    await executeDBManipulation(DB_CON, {
+      query: "INSERT INTO userPasswords values (?, ?, ?, ?, ?, ?)",
+      params: queryParams,
+    });
+
+    console.log("New Password added successfully !");
+    return true;
+  } catch (error) {
+    throw new Error(error);
+  }
 };

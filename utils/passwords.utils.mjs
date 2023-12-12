@@ -61,6 +61,14 @@ function deriveKeyAndIV(masterPassword) {
   return { key, iv };
 }
 
+/**
+ * Encrypts a password using a master password.
+ *
+ * @param {string} txtPw - The password to encrypt.
+ * @param {string} masterPassword - The master password to use for encryption.
+ * @returns {Object} - An object containing the encrypted password, authentication tag, and initialization vector.
+ * @throws {Error} - If an error occurs during encryption.
+ */
 export function encryptPw(txtPw, masterPassword) {
   try {
     const algorithm = process.env.CRYPT_ALGO;
@@ -80,13 +88,22 @@ export function encryptPw(txtPw, masterPassword) {
     throw new Error(err);
   }
 }
-
-export function decryptPw(encryptedPw, masterPassword, authTag) {
+/**
+ * Decrypts a password using the specified encryption algorithm, master password,
+ * authentication tag, and initialization vector (IV).
+ *
+ * @param {string} encryptedPw - The encrypted password to be decrypted.
+ * @param {string} masterPassword - The master password used for decryption.
+ * @param {string} authTag - The authentication tag associated with the encrypted password.
+ * @param {Buffer} iv - The initialization vector used for decryption.
+ * @return {string} The decrypted password.
+ */
+export function decryptPw(encryptedPw, masterPassword, authTag, iv) {
   try {
     const algorithm = process.env.CRYPT_ALGO;
-    const { key, iv } = deriveKeyAndIV(masterPassword);
+    const { key } = deriveKeyAndIV(masterPassword);
 
-    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    const decipher = crypto.createDecipheriv(algorithm, Buffer.from(key), iv);
 
     decipher.setAuthTag(Buffer.from(authTag, "hex"));
 

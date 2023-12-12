@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS userData (
 CREATE TABLE IF NOT EXISTS userPasswords (
     id INT NOT NULL PRIMARY KEY,
     platform varchar(255) NOT NULL,
+    encryptedPassword TEXT NOT NULL,
+    authTags BLOB NOT NULL,
+    iv BLOB NOT NULL,
     username varchar(255) NOT NULL,
+    
     CONSTRAINT user_fk FOREIGN KEY (username) REFERENCES userData(username)
 );

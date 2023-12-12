@@ -47,7 +47,7 @@ export const checkUserCred = async function (DB_CON, providedUserDetails) {
     DB_CON,
     {
       query: "SELECT username, masterPassword FROM userData WHERE username = ?",
-      params: [providedUserDetails.username],
+      params: { username: providedUserDetails.username },
     },
     "singleRow"
   );
@@ -62,5 +62,22 @@ export const checkUserCred = async function (DB_CON, providedUserDetails) {
     return false;
   } else {
     return storedDetails.username;
+  }
+};
+
+export const getUserMasterPW = async function (DB_CON, CurrentUser) {
+  try {
+    const userMasterPW = await queryDB(
+      DB_CON,
+      {
+        query: "SELECT masterPassword FROM userData WHERE username = ?",
+        params: { CurrentUser },
+      },
+      "singleRow"
+    );
+
+    return userMasterPW;
+  } catch (error) {
+    throw new Error(error);
   }
 };
