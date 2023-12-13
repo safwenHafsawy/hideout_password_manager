@@ -1,6 +1,7 @@
 -- CREATE USER TABLE
 CREATE TABLE IF NOT EXISTS userData (
-    username varchar(255) NOT NULL PRIMARY KEY,
+    id INT NOT NULL PRIMARY KEY,
+    username varchar(255) NOT NULL ,
     masterPassword varchar(255) NOT NULL
 );
 
@@ -12,7 +13,7 @@ CREATE TABLE IF NOT EXISTS userPasswords (
     encryptedPassword TEXT NOT NULL,
     authTags BLOB NOT NULL,
     iv BLOB NOT NULL,
-    username varchar(255) NOT NULL,
+    userId INT NOT NULL,
     
-    CONSTRAINT user_fk FOREIGN KEY (username) REFERENCES userData(username)
+    CONSTRAINT user_fk FOREIGN KEY (userId) REFERENCES userData(id) ON DELETE CASCADE;
 );
