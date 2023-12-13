@@ -8,7 +8,15 @@ import {
 import { encryptPw, decryptPw } from "./passwords.utils.mjs";
 import { executeDBManipulation, queryDB } from "./database.utils.mjs";
 
+/**
+ * Show a choice menu to the user and wait for their response.
+ *
+ * @param {string} message - The message to display to the user.
+ * @param {Array<string>} choices - The choices to display in the menu.
+ * @returns {Promise<Object>} - A promise that resolves to the user's response.
+ */
 export const showChoiceMenu = async function (message, choices) {
+  // Use the inquirer package to prompt the user with a list of choices
   const userResponse = await inquirer.prompt({
     type: "list",
     name: "response",
@@ -16,42 +24,54 @@ export const showChoiceMenu = async function (message, choices) {
     choices,
   });
 
+  // Return the user's response
   return userResponse;
 };
 
-export const accountCreation = async function (DB_CON) {
+/**
+ * Prompts the user to create a new account and inserts the user data into the database.
+ * @param {DB_CON} DB_CON - The database connection object.
+ * @returns {string} The newly created username.
+ * @throws {Error} If an error occurs during the account creation process.
+ */
+export const accountCreation = async (DB_CON) => {
   try {
+    // Prompt the user for new account details
     const newUserDetails = await inquirer.prompt([
       {
         type: "input",
         name: "username",
         message: "Please choose your username",
-        validate(username) {
-          if (!username || username.length < 5)
+        validate: (username) => {
+          if (!username || username.length < 5) {
             return "Please provide a username that is at least 5 characters long";
-          else return true;
+          }
+          return true;
         },
       },
       {
         type: "password",
         name: "masterPassword",
         message:
-          "Please enter your master password ! make sure you memoize it cause it unrecoverable",
+          "Please enter your master password. Make sure to memoize it as it is unrecoverable.",
         prefix: "!!",
         mask: "*",
-        validate(password) {
-          const pwRegExp = new RegExp("([\\wê_$}{[\\]:;]){8,}", "g");
-          if (!pwRegExp.test(password))
-            return "Invalid Password. Please provide a string with 8 or more characters,\n accepted letters '_', 'ê', '$', '}', '{', ']', or '['.";
-          else return true;
+        validate: (password) => {
+          const pwRegExp = /^[\wê_$}{[\]:;]{8,}$/;
+          if (!pwRegExp.test(password)) {
+            return "Invalid password. Please provide a string with 8 or more characters, accepted characters are '_', 'ê', '$', '}', '{', ']', or '['.";
+          }
+          return true;
         },
       },
     ]);
 
+    // Insert the new user data into the database
     const newUsername = await insertNewUserData(DB_CON, newUserDetails);
 
+    // If the username already exists, prompt the user to choose a new username
     if (newUsername === "USERNAME_USED") {
-      console.log("Username already exists ! Please choose a new username");
+      console.log("Username already exists! Please choose a new username.");
       await accountCreation(DB_CON);
     }
 
@@ -61,13 +81,22 @@ export const accountCreation = async function (DB_CON) {
   }
 };
 
-export const userLogin = async function (DB_CON) {
+/**
+ * Prompts the user to enter their username and password for login.
+ * If the credentials are valid, returns the username.
+ * If the credentials are invalid, prompts the user again.
+ * @param {DBConnection} DB_CON - The database connection.
+ * @returns {Promise<string>} The username of the logged-in user.
+ * @throws {Error} If an error occurs during the login process.
+ */
+export const userLogin = async (DB_CON) => {
   try {
+    // Prompt the user to enter their username and password
     const userCred = await inquirer.prompt([
       {
         type: "input",
         name: "username",
-        message: "Please enter your username ",
+        message: "Please enter your username",
       },
       {
         type: "password",
@@ -76,25 +105,39 @@ export const userLogin = async function (DB_CON) {
         mask: "*",
       },
     ]);
+
     console.log(userCred);
+
+    // Check if the user credentials are valid
     let username = await checkUserCred(DB_CON, userCred);
 
+    // If the credentials are invalid, prompt the user again
     if (!username) {
-      console.log("Invalid credentials ! Please try again");
+      console.log("Invalid credentials! Please try again");
       return await userLogin(DB_CON);
     }
+
     return username;
   } catch (err) {
     throw new Error(err);
   }
 };
 
+/**
+ * Adds a new safe box entry to the user's vault.
+ * @param {DBConnection} DB_CON - The database connection.
+ * @param {Object} options - The options for the new safe box entry.
+ * @param {string} options.userId - The user ID.
+ * @returns {boolean} - Indicates whether the new safe box entry was added successfully.
+ * @throws {Error} - If an error occurs while adding the new safe box entry.
+ */
 export const addNewSafeBox = async (DB_CON, { userId }) => {
   try {
-    const safeBoxData = await inquirer.prompt([
+    // Prompt the user for safe box data
+    const { platform, password } = await inquirer.prompt([
       {
         type: "input",
-        name: "for",
+        name: "platform",
         message: "What account are storing your password for?",
       },
       {
@@ -105,27 +148,29 @@ export const addNewSafeBox = async (DB_CON, { userId }) => {
       },
     ]);
 
-    // get user master password (used for encrypting stored passwords)
+    // Get the user's master password used for encrypting stored passwords
     const { masterPassword } = await getUserMasterPW(DB_CON, userId);
-    const { encryptedPw, authTag, iv } = encryptPw(
-      safeBoxData.password,
-      masterPassword
-    );
 
+    // Encrypt the safe box password
+    const { encryptedPw, authTag, iv } = encryptPw(password, masterPassword);
+
+    // Prepare the query parameters for inserting the safe box entry into the database
     const queryParams = {
       id: crypto.randomUUID(),
-      platform: safeBoxData.for,
+      platform,
       encryptedPw,
       authTag,
       iv,
       userId,
     };
 
+    // Execute the database manipulation to insert the safe box entry
     await executeDBManipulation(DB_CON, {
       query: "INSERT INTO userVault values (?, ?, ?, ?, ?, ?)",
       params: queryParams,
     });
 
+    // Print success message
     console.log("New Password added successfully !");
     return true;
   } catch (error) {
@@ -133,8 +178,16 @@ export const addNewSafeBox = async (DB_CON, { userId }) => {
   }
 };
 
+/**
+ * Retrieve safe box data for a given user.
+ * @param {DBConnection} DB_CON - The database connection object.
+ * @param {string} userId - The user ID.
+ * @returns {boolean} - Returns true if the operation is successful.
+ * @throws {Error} - Throws an error if there is an issue with the operation.
+ */
 export const getSafeBoxData = async (DB_CON, { userId }) => {
   try {
+    // Retrieve the user's vault data from the database
     const vaultData = await queryDB(
       DB_CON,
       {
@@ -144,11 +197,12 @@ export const getSafeBoxData = async (DB_CON, { userId }) => {
       "allRows"
     );
 
+    // Prompt the user to select a safe box platform
     const whichPlatform = await inquirer.prompt([
       {
         type: "list",
         name: "platformId",
-        message: "Which safe box are opening today ?",
+        message: "Which safe box are you opening today?",
         choices: vaultData.map((data) => ({
           name: data.platform,
           value: data.id,
@@ -156,13 +210,15 @@ export const getSafeBoxData = async (DB_CON, { userId }) => {
       },
     ]);
 
-    //getting the password of the selected platform
+    // Get the password of the selected platform
     const selectedPlatform = vaultData.find(
       (data) => data.id === whichPlatform.platformId
     );
 
+    // Get the user's master password
     const { masterPassword } = await getUserMasterPW(DB_CON, userId);
 
+    // Decrypt the password
     const decryptedPw = decryptPw(
       selectedPlatform.encryptedPassword,
       masterPassword,
@@ -170,6 +226,7 @@ export const getSafeBoxData = async (DB_CON, { userId }) => {
       selectedPlatform.iv
     );
 
+    // Print the decrypted password for the selected platform
     console.log(`Password for ${selectedPlatform.platform} is ${decryptedPw}`);
 
     return true;
@@ -178,6 +235,12 @@ export const getSafeBoxData = async (DB_CON, { userId }) => {
   }
 };
 
+/**
+ * Edits an account in the database.
+ * @param {DBConnection} DB_CON - The database connection.
+ * @param {string} userId - The user ID.
+ * @param {string} username - The current username.
+ */
 export const editAccount = async (DB_CON, { userId, username }) => {
   try {
     // Prompt user for the action to perform
@@ -225,7 +288,7 @@ export const editAccount = async (DB_CON, { userId, username }) => {
 
       if (confirmDelete) {
         // Delete all of the user stored passwords
-        console.log("Delete all you data ! please wait a sec...");
+        console.log("Delete all your data! Please wait a sec...");
         await executeDBManipulation(DB_CON, {
           query: "DELETE FROM userVault WHERE userId = ?",
           params: { userId },
@@ -241,7 +304,6 @@ export const editAccount = async (DB_CON, { userId, username }) => {
       }
     }
   } catch (error) {
-    // Throw any errors that occur during the process
     throw new Error(error);
   }
 };
