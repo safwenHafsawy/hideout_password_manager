@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { executeDBManipulation, queryDB } from "./database.utils.mjs";
 import {
   hashMasterPassword,
@@ -11,7 +12,7 @@ export const insertNewUserData = async function (DB_CON, userDetails) {
       DB_CON,
       {
         query: "SELECT username FROM userData WHERE username = ?",
-        params: [userDetails.username],
+        params: { username: userDetails.username.toLowerCase() },
       },
       "singleRow"
     );
@@ -25,9 +26,11 @@ export const insertNewUserData = async function (DB_CON, userDetails) {
 
     // Insert user details into the database
     await executeDBManipulation(DB_CON, {
-      query: "INSERT INTO userData (username, masterPassword) VALUES (?, ?)",
+      query:
+        "INSERT INTO userData (id, username, masterPassword) VALUES (?,?, ?)",
       params: {
-        username: userDetails.username,
+        id: crypto.randomUUID(),
+        username: userDetails.username.toLowerCase(),
         password: hashedPw,
       },
     });
@@ -47,7 +50,7 @@ export const checkUserCred = async function (DB_CON, providedUserDetails) {
     DB_CON,
     {
       query: "SELECT username, masterPassword FROM userData WHERE username = ?",
-      params: { username: providedUserDetails.username },
+      params: { username: providedUserDetails.username.toLowerCase() },
     },
     "singleRow"
   );
@@ -71,7 +74,7 @@ export const getUserMasterPW = async function (DB_CON, CurrentUser) {
       DB_CON,
       {
         query: "SELECT masterPassword FROM userData WHERE username = ?",
-        params: { CurrentUser },
+        params: { username: CurrentUser.toLowerCase() },
       },
       "singleRow"
     );

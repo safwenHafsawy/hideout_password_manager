@@ -15,5 +15,5 @@ CREATE TABLE IF NOT EXISTS userPasswords (
     iv BLOB NOT NULL,
     userId INT NOT NULL,
     
-    CONSTRAINT user_fk FOREIGN KEY (userId) REFERENCES userData(id) ON DELETE CASCADE;
+    CONSTRAINT user_fk FOREIGN KEY (userId) REFERENCES userData(id) ON DELETE CASCADE
 );

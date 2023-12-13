@@ -6,6 +6,7 @@ import {
   showChoiceMenu,
   addNewSafeBox,
   getSafeBoxData,
+  editAccount,
 } from "./utils/handlers.utils.mjs";
 import "dotenv/config";
 
@@ -71,6 +72,10 @@ console.log("%c/********************************/", "color: #3498db;");
           break;
         case 2:
           await getSafeBoxData(DB_CON, CurrentUser);
+          break;
+        case 3:
+          await editAccount(DB_CON, CurrentUser);
+          break;
         case 4:
           console.log("See you soon !");
           process.exit(0);
