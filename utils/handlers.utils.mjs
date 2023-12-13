@@ -19,6 +19,12 @@ export const showChoiceMenu = async function (message, choices) {
   return userResponse;
 };
 
+/**
+ * Asynchronously creates a new user account in the database.
+ *
+ * @param {DBConnection} DB_CON - The database connection object.
+ * @return {string} The username of the newly created account.
+ */
 export const accountCreation = async function (DB_CON) {
   try {
     const newUserDetails = await inquirer.prompt([
@@ -60,7 +66,12 @@ export const accountCreation = async function (DB_CON) {
     throw new Error(err);
   }
 };
-
+/**
+ * Login the user to the system.
+ *
+ * @param {DB_CON} DB_CON - The database connection.
+ * @return {string|null} The username of the logged in user, or null if the credentials are invalid.
+ */
 export const userLogin = async function (DB_CON) {
   try {
     const userCred = await inquirer.prompt([
@@ -77,11 +88,11 @@ export const userLogin = async function (DB_CON) {
       },
     ]);
 
-    const username = await checkUserCred(DB_CON, userCred);
+    let username = await checkUserCred(DB_CON, userCred);
 
     if (!username) {
       console.log("Invalid credentials ! Please try again");
-      userLogin(DB_CON);
+      return await userLogin(DB_CON);
     }
     return username;
   } catch (err) {
