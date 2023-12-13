@@ -24,12 +24,15 @@ export const insertNewUserData = async function (DB_CON, userDetails) {
     // Hash the master password
     const hashedPw = await hashMasterPassword(userDetails.masterPassword);
 
+    // generate id for user
+    const id = crypto.randomUUID();
+
     // Insert user details into the database
     await executeDBManipulation(DB_CON, {
       query:
         "INSERT INTO userData (id, username, masterPassword) VALUES (?,?, ?)",
       params: {
-        id: crypto.randomUUID(),
+        id,
         username: userDetails.username.toLowerCase(),
         password: hashedPw,
       },
@@ -38,7 +41,7 @@ export const insertNewUserData = async function (DB_CON, userDetails) {
     console.log("Account created successfully!");
 
     // Return the username for further use if needed
-    return userDetails.username;
+    return { userId: id, username: userDetails.username };
   } catch (err) {
     // Handle any errors that occurred during the process
     throw new Error(err);
@@ -49,7 +52,8 @@ export const checkUserCred = async function (DB_CON, providedUserDetails) {
   const storedDetails = await queryDB(
     DB_CON,
     {
-      query: "SELECT username, masterPassword FROM userData WHERE username = ?",
+      query:
+        "SELECT id,username, masterPassword FROM userData WHERE username = ?",
       params: { username: providedUserDetails.username.toLowerCase() },
     },
     "singleRow"
@@ -64,21 +68,20 @@ export const checkUserCred = async function (DB_CON, providedUserDetails) {
   ) {
     return false;
   } else {
-    return storedDetails.username;
+    return { userId: storedDetails.id, username: storedDetails.username };
   }
 };
 
-export const getUserMasterPW = async function (DB_CON, CurrentUser) {
+export const getUserMasterPW = async function (DB_CON, userId) {
   try {
     const userMasterPW = await queryDB(
       DB_CON,
       {
-        query: "SELECT masterPassword FROM userData WHERE username = ?",
-        params: { username: CurrentUser.toLowerCase() },
+        query: "SELECT masterPassword FROM userData WHERE id = ?",
+        params: { userId },
       },
       "singleRow"
     );
-
     return userMasterPW;
   } catch (error) {
     throw new Error(error);

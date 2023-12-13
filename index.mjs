@@ -13,7 +13,7 @@ import "dotenv/config";
 /**
  * Setting up needed variables
  */
-const abortSignal = AbortSignal.timeout(parseInt(process.env.SIGNAL_TIMEOUT)); // close app if timeout
+//const abortSignal = AbortSignal.timeout(parseInt(process.env.SIGNAL_TIMEOUT)); // close app if timeout
 const ROOT_DIRECTORY = getDirName(import.meta.url);
 const DB_CON = await connectToDatabase(ROOT_DIRECTORY);
 var CurrentUser;
@@ -57,7 +57,7 @@ console.log("%c/********************************/", "color: #3498db;");
     if (CurrentUser) {
       //showLoggedInOptions
       const choice = await showChoiceMenu(
-        `Welcome ${CurrentUser} ! How can PW manager help you today ? `,
+        `Welcome ${CurrentUser.username} ! How can PW manager help you today ? `,
         [
           { name: "Store new password", value: 1 },
           { name: "Get password from DB", value: 2 },

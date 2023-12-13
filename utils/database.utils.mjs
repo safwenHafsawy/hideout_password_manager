@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 async function connectToDatabase(rootDirectory) {
-  const dbPath = path.join(rootDirectory, "/db", "fidus_Achates.db");
+  const dbPath = path.join(rootDirectory, "/db", "theVault.db");
   return new Promise(async (resolve, reject) => {
     let DB;
     DB = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, async (err) => {
