@@ -5,6 +5,7 @@ import {
   userLogin,
   showChoiceMenu,
   addNewSafeBox,
+  getSafeBoxData,
 } from "./utils/handlers.utils.mjs";
 import "dotenv/config";
 
@@ -21,13 +22,18 @@ var CurrentUser;
  */
 console.clear();
 console.log("%c/********************************/", "color: #3498db;");
-console.log(`
-
-╦ ╦┌─┐┬  ┌─┐┌─┐┌┬┐┌─┐  ┌┬┐┌─┐  ╔═╗╦ ╦╔╦╗
-║║║├┤ │  │  │ ││││├┤    │ │ │  ╠═╝║║║║║║
-╚╩╝└─┘┴─┘└─┘└─┘┴ ┴└─┘   ┴ └─┘  ╩  ╚╩╝╩ ╩
-
-
+console.log(`\
+\n\
+\n\
+\n\
+_    _      _                            _          _   _ _     _                  _   \n\
+| |  | |    | |                          | |        | | | (_)   | |                | |  \n\
+| |  | | ___| | ___ ___  _ __ ___   ___  | |_ ___   | |_| |_  __| | ___  ___  _   _| |_ \n\
+| |\\/| |/ _ \\ |/ __/ _ \\| '_ \` _ \\ / _ \\ | __/ _ \\  |  _  | |/ _\` |/ _ \\/ _ \\| | | | __|\n\
+\\  /\\  /  __/ | (_| (_) | | | | | |  __/ | || (_) | | | | | | (_| |  __/ (_) | |_| | |_ \n\
+ \\/  \\/ \\___|_|\\___\\___/|_| |_| |_|\\___|  \\__\\___/  \\_| |_|_/\\__,_|\\___|\\___/ \\__,_|\\__|\n\
+                                                                                       \n\
+                                                                                       \n\
 `);
 console.log("%c/********************************/", "color: #3498db;");
 
@@ -63,6 +69,8 @@ console.log("%c/********************************/", "color: #3498db;");
         case 1:
           await addNewSafeBox(DB_CON, CurrentUser);
           break;
+        case 2:
+          await getSafeBoxData(DB_CON, CurrentUser);
         case 4:
           console.log("See you soon !");
           process.exit(0);

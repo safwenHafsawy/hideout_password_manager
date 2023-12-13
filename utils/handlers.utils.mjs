@@ -6,7 +6,7 @@ import {
   getUserMasterPW,
 } from "./userData.utils.mjs";
 import { encryptPw, decryptPw } from "./passwords.utils.mjs";
-import { executeDBManipulation } from "./database.utils.mjs";
+import { executeDBManipulation, queryDB } from "./database.utils.mjs";
 
 export const showChoiceMenu = async function (message, choices) {
   const userResponse = await inquirer.prompt({
@@ -137,6 +137,51 @@ export const addNewSafeBox = async (DB_CON, CurrentUser) => {
     });
 
     console.log("New Password added successfully !");
+    return true;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export const getSafeBoxData = async (DB_CON, CurrentUser) => {
+  try {
+    const vaultData = await queryDB(
+      DB_CON,
+      {
+        query: "SELECT * FROM userPasswords WHERE username = ?",
+        params: { CurrentUser },
+      },
+      "allRows"
+    );
+
+    const whichPlatform = await inquirer.prompt([
+      {
+        type: "list",
+        name: "platformId",
+        message: "Which platform are you looking for?",
+        choices: vaultData.map((data) => ({
+          name: data.platform,
+          value: data.id,
+        })),
+      },
+    ]);
+
+    //getting the password of the selected platform
+    const selectedPlatform = vaultData.find(
+      (data) => data.id === whichPlatform.platformId
+    );
+
+    const { masterPassword } = await getUserMasterPW(DB_CON, CurrentUser);
+
+    const decryptedPw = decryptPw(
+      selectedPlatform.encryptedPassword,
+      masterPassword,
+      selectedPlatform.authTags,
+      selectedPlatform.iv
+    );
+
+    console.log(`Password for ${selectedPlatform.platform} is ${decryptedPw}`);
+
     return true;
   } catch (error) {
     throw new Error(error);

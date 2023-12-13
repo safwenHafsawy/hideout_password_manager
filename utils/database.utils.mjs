@@ -79,6 +79,14 @@ function queryDB(DB, { query, params }, type) {
           resolve(rows);
         }
       });
+    } else {
+      DB.all(query, queryParams, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
     }
   });
 }
