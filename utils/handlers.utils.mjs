@@ -76,7 +76,7 @@ export const userLogin = async function (DB_CON) {
         mask: "*",
       },
     ]);
-
+    console.log(userCred);
     let username = await checkUserCred(DB_CON, userCred);
 
     if (!username) {
@@ -195,7 +195,7 @@ export const editAccount = async (DB_CON, { userId, username }) => {
 
     if (actionToPerform === 1) {
       // Prompt user for the new username
-      const newUsername = await inquirer.prompt([
+      const { newUsername } = await inquirer.prompt([
         {
           type: "input",
           name: "newUsername",
@@ -206,13 +206,11 @@ export const editAccount = async (DB_CON, { userId, username }) => {
       // Update the username in the database
       await executeDBManipulation(DB_CON, {
         query: "UPDATE userData SET username = ? WHERE id = ?",
-        params: { username: newUsername.newUsername, userId },
+        params: { username: newUsername.toLowerCase(), userId },
       });
 
       // Display success message
-      console.log(
-        "From here on out you shall be known as " + newUsername.newUsername
-      );
+      console.log("From here on out you shall be known as " + newUsername);
     } else if (actionToPerform === 2) {
       // Prompt user for confirmation
       console.clear();

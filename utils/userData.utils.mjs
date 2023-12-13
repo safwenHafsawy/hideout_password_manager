@@ -59,6 +59,8 @@ export const checkUserCred = async function (DB_CON, providedUserDetails) {
     "singleRow"
   );
 
+  console.log(storedDetails);
+
   if (
     !storedDetails ||
     !(await compareMasterPassword(
