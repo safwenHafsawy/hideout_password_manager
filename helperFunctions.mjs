@@ -14,33 +14,74 @@ export const getDirName = (moduleUrl) => {
   return path.dirname(filename);
 };
 
-// const abortIfInactive = (abortSignal, rl) => {
-//   abortSignal.addEventListener(
-//     "abort",
-//     () => {
-//       let seconds = 10; // abort if the client is inactive for this period (seconds)
-//       console.clear();
-//       console.log("Are you still alive?"); // notify the client
+/**
+ * Clears the console and displays a banner.
+ */
+export const showBanner = () => {
+  console.clear();
+  console.log(`
+╔══════════════════════════════════════════════════════════╗
+  __   __  ___   ______   _______  _______  __   __  _______
+  |  | |  ||   | |      | |       ||       ||  | |  ||       |
+  |  |_|  ||   | |  _    ||    ___||   _   ||  | |  ||_     _|
+  |       ||   | | | |   ||   |___ |  | |  ||  |_|  |  |   |
+  |       ||   | | |_|   ||    ___||  |_|  ||       |  |   |
+  |   _   ||   | |       ||   |___ |       ||       |  |   |
+  |__| |__||___| |______| |_______||_______||_______|  |___|
+                                Password Manager
+╚═══════════════════════════════════════════════════════════╝
+ `);
+};
 
-//       // countdown till aborting
-//       const intervalId = setInterval(() => {
-//         console.clear();
-//         console.log(`Aborting in ${seconds} seconds... click to cancel !`);
-//         seconds -= 1;
+/**
+ * Shows the logged in options to the user.
+ * @returns {Promise<void>}
+ */
+const loggedInOptions = async () => {
+  showBanner();
 
-//         if (seconds === 0) {
-//           console.log("Okay, you're dead. Over and out.");
-//           process.exit(0);
-//         }
-//       }, 1000);
+  // Define the options available to the user
+  const options = [
+    { name: "Store new password", value: 0 },
+    { name: "Update Existing password", value: 1 },
+    { name: "Get password from Safe box", value: 2 },
+    { name: "Edit account", value: 3 },
+    { name: "Exit", value: 4 },
+  ];
 
-//       rl.on("line", () => {
-//         clearInterval(intervalId);
-//         abortSignal;
-//       });
-//     },
-//     { once: true }
-//   );
-// };
+  // Show the choice menu to the user and wait for their response
+  const choice = await showChoiceMenu(`How can I help you?`, options);
 
-// export { abortIfInactive };
+  // Execute the appropriate action based on the user's choice
+  switch (choice.response) {
+    case 0:
+      await addNewSafeBox(DB_CON, CurrentUser);
+      break;
+    case 1:
+      await updateExistingSafeBox(DB_CON, CurrentUser);
+      break;
+    case 2:
+      await getSafeBoxData(DB_CON, CurrentUser);
+      break;
+    case 3:
+      await editAccount(DB_CON, CurrentUser);
+      break;
+    case 4:
+      console.log("See you soon!");
+      process.exit(0);
+  }
+
+  // Show the post operation choices to the user
+  const postOperationChoice = await showChoiceMenu("Where to now?", [
+    { name: "Go Back", value: 0 },
+    { name: "Exit", value: 1 },
+  ]);
+
+  // Execute the appropriate action based on the user's choice
+  if (postOperationChoice.response === 0) {
+    return loggedInOptions();
+  } else if (postOperationChoice.response === 1) {
+    console.log("See you soon!");
+    process.exit(0);
+  }
+};
