@@ -7,6 +7,7 @@ import {
   addNewSafeBox,
   getSafeBoxData,
   editAccount,
+  updateExistingSafeBox,
 } from "./utils/handlers.utils.mjs";
 import "dotenv/config";
 
@@ -64,23 +65,27 @@ console.log("%c/********************************/", "color: #3498db;");
     if (CurrentUser) {
       // Display the menu options for logged in users
       const loggedInOptions = [
-        { name: "Store new password", value: 1 },
-        { name: "Get password from DB", value: 2 },
+        { name: "Store new password", value: 0 },
+        { name: "Update Existing password", value: 1 },
+        { name: "Get password from Safe box", value: 2 },
         { name: "Edit account", value: 3 },
         { name: "Exit", value: 4 },
       ];
 
       // Display the logged in menu and get the user's choice
       const choice = await showChoiceMenu(
-        `Welcome ${CurrentUser.username}! How can PW manager help you today?`,
+        `Welcome ${CurrentUser.username}! How can I help you today?`,
         loggedInOptions
       );
 
       // Handle the user's choice from the logged in menu
       switch (choice.response) {
-        case 1:
+        case 0:
           // Store a new password
           await addNewSafeBox(DB_CON, CurrentUser);
+          break;
+        case 1:
+          await updateExistingSafeBox(DB_CON, CurrentUser);
           break;
         case 2:
           // Get password from the database

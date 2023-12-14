@@ -106,8 +106,6 @@ export const userLogin = async (DB_CON) => {
       },
     ]);
 
-    console.log(userCred);
-
     // Check if the user credentials are valid
     let username = await checkUserCred(DB_CON, userCred);
 
@@ -210,7 +208,7 @@ export const getSafeBoxData = async (DB_CON, { userId }) => {
       },
     ]);
 
-    // Get the password of the selected platform
+    // Get the encrypted password of the selected platform
     const selectedPlatform = vaultData.find(
       (data) => data.id === whichPlatform.platformId
     );
@@ -235,6 +233,77 @@ export const getSafeBoxData = async (DB_CON, { userId }) => {
   }
 };
 
+/**
+ * Updates an existing safe box in the database for a given user.
+ * Prompts the user to select the safe box and enter a new password.
+ * Updates the password in the database.
+ *
+ * @param {DBConnection} DB_CON - The database connection object.
+ * @param {string} userId - The ID of the user.
+ * @throws {Error} If there is an error updating the safe box.
+ */
+export const updateExistingSafeBox = async (DB_CON, { userId }) => {
+  try {
+    // Query the database to get the existing safe box data for the user
+    const vaultData = await queryDB(
+      DB_CON,
+      {
+        query: "SELECT * FROM userVault WHERE userId = ?",
+        params: { userId },
+      },
+      "allRows"
+    );
+
+    // Prompt the user to select the safe box to update
+    const { platform } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "platform",
+        message: "Which safe box are you updating today?",
+        choices: vaultData.map((data) => ({
+          name: data.platform,
+          value: data.id,
+        })),
+      },
+    ]);
+
+    // Prompt the user to enter a new password for the safe box
+    const { newPassword } = await inquirer.prompt([
+      {
+        type: "password",
+        name: "newPassword",
+        message: "Enter the password you want to put in the safe box",
+        mask: "*",
+      },
+    ]);
+
+    // Get the user's master password used for encrypting stored passwords
+    const { masterPassword } = await getUserMasterPW(DB_CON, userId);
+
+    // Encrypt the safe box password
+    const { encryptedPw, authTag, iv } = encryptPw(newPassword, masterPassword);
+
+    // Prepare the query parameters for inserting the safe box entry into the database
+    const queryParams = {
+      encryptedPw,
+      authTag,
+      iv,
+      platform,
+    };
+
+    // Update the password in the database for the selected safe box
+    await executeDBManipulation(DB_CON, {
+      query:
+        "UPDATE userVault SET encryptedPassword = ?, authTags = ?, iv = ? WHERE id = ?",
+      params: queryParams,
+    });
+
+    // Log success message
+    console.log(`Password updated successfully!`);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
 /**
  * Edits an account in the database.
  * @param {DBConnection} DB_CON - The database connection.
