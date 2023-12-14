@@ -3,12 +3,14 @@ import { connectToDatabase } from "./utils/database.utils.mjs";
 import {
   accountCreation,
   userLogin,
-  showChoiceMenu,
+  editAccount,
+} from "./handlers/accountManagement.handler.mjs";
+import { showChoiceMenu } from "./handlers/general.handlers.mjs";
+import {
   addNewSafeBox,
   getSafeBoxData,
-  editAccount,
   updateExistingSafeBox,
-} from "./utils/handlers.utils.mjs";
+} from "./handlers/safebox.handler.mjs";
 import "dotenv/config";
 
 /**
